@@ -10,3 +10,7 @@ Use tensorflow and textCNN do text classification
 http://www.wildml.com/2015/12/implementing-a-cnn-for-text-classification-in-tensorflow/
 
 https://github.com/dennybritz/cnn-text-classification-tf
+
+Tf–idf term weighting and word count
+
+http://scikit-learn.org/stable/modules/feature_extraction.html#text-feature-extraction
