@@ -56,23 +56,20 @@ X_train, X_test, y_train, y_test = train_test_split(new_X, Y, test_size=0.3, ran
 
 from sklearn.naive_bayes import MultinomialNB
 nb = MultinomialNB()
-nb.fit(X_train, y_train)
+#nb.fit(X_train, y_train)
 
-preds = nb.predict(X_test)
+#preds = nb.predict(X_test)
 
 from sklearn.metrics import confusion_matrix, classification_report
 print(confusion_matrix(y_test, preds))
 print('\n')
 print(classification_report(y_test, preds))
-print(list(y_test))
-print(preds)
-sum = 0
-for i in range(len(preds)):
-    sum = sum + (list(y_test)[i]-preds[i])^2
-print(sum)
-print(len(preds))
-
-
+#print(list(y_test))
+#print(preds)
+from sklearn.model_selection import cross_val_predict
+predicted = cross_val_predict(nb, X_train, y_train, cv=10)
+import sklearn.metrics
+print(sklearn.metrics.mean_squared_error(y_test,predicted))
 ############################# Here's the result for first 10000 rows of data #######################################
 #Shape of Sparse Matrix:  (9848, 16611)
 #Amount of Non-Zero occurrences:  456592
