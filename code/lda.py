@@ -31,11 +31,19 @@ from time import time
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.decomposition import NMF, LatentDirichletAllocation
+import numpy as np
+import nltk
+nltk.download('stopwords')
+nltk.download('wordnet')
+import re
+from nltk.corpus import stopwords
 
-n_samples = 1000000
-n_features = 1000000
+
+
+n_samples = 200
+n_features = 100
 n_components = 10
-n_top_words = 10
+n_top_words = 20
 
 
 def print_top_words(model, feature_names, n_top_words):
@@ -53,15 +61,61 @@ def print_top_words(model, feature_names, n_top_words):
 # only one document or in at least 95% of the documents are removed.
 
 
-train_200 = pd.read_csv("clean_train_dat.csv")
-train1 = train_200.dropna(subset=['text'])
-new_train = train1
+# train_200 = pd.read_csv("clean200.csv")
+# train1 = train_200.dropna(subset=['text'])
+# new_train = train1
 
-#g = sns.FacetGrid(data=new_train, col='stars')
-#g.map(plt.hist, 'text_length', bins=50)
-#plt.show()
-X = new_train['text']
-Y = new_train['stars']
+
+
+#set the system not to print warnings
+pd.options.mode.chained_assignment = None
+
+#Read the data
+yelp_30000 = pd.read_csv("train30000.csv")
+text_30000 = yelp_30000.loc[:,"text"]
+
+#Remove the noise
+stops = set(stopwords.words("english"))
+keep = {"all","do","don't","her","his","him","should", "shouldn't","not"}
+for word in keep:
+    stops.remove(word)
+
+from nltk.stem.wordnet import WordNetLemmatizer
+lem = WordNetLemmatizer()
+
+def noise_remove(review, stops):
+    #only keep characters ! and ?
+    review = re.sub("\n", " ", review)
+    review = re.sub("[^a-zA-Z!?]", " ", review)
+    #change to lower case
+    review = review.lower().split()
+    #remove the stop words
+    useful_review = [word for word in review if not word in stops]
+    #normalize the verb and noun
+    useful_review = [lem.lemmatize(word, "v") for word in useful_review]
+    return " ".join(useful_review)
+
+for i in range(0,29999):
+    text_30000[i] = noise_remove(text_30000[i],stops)
+
+
+
+
+#Count all the words
+''''
+wordcount={}
+for i in range(0,29999):
+    for word in text_30000[i].split():
+        if word not in wordcount:
+            wordcount[word] = 1
+        else:
+            wordcount[word] += 1
+
+print("The length of dictionary is:",len(wordcount.keys()))
+'''
+
+X = text_30000
+Y = yelp_30000['stars']
 
 # Use tf (raw term count) features for LDA.
 print("Extracting tf features for LDA...")
@@ -76,22 +130,9 @@ lda = LatentDirichletAllocation(n_components=n_components, max_iter=5,
                                 learning_offset=50.,
                                 random_state=0)
 
-lda.fit(tf)
-
+model = lda.fit(tf)
+pc = pd.DataFrame(np.transpose(model.components_))
+pc.to_csv('pc.csv')
 print("\nTopics in LDA model:")
 tf_feature_names = tf_vectorizer.get_feature_names()
 print_top_words(lda, tf_feature_names, n_top_words)
-'''
-Topics in LDA model:
-Topic #0: pizza salad pasta patio sauc italian chees wing crust good
-Topic #1: burger fri like sandwich chees good order got tri tast
-Topic #2: buffet coffe dessert due crepe rib station prime crab line
-Topic #3: chicken good rice order sauc food soup like spici dish
-Topic #4: great food servic place good friendli love sushi staff breakfast
-Topic #5: place good food like get go bar price beer realli
-Topic #6: order food us time wait servic tabl ask get back
-Topic #7: dish restaur dessert meal menu dinner order appet delici tast
-Topic #8: room wine restaur strip vega tabl dine pho steak date
-Topic #9: place food best taco love go time great tri alway
-'''
-
