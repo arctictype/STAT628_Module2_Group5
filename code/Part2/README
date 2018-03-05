@@ -1,0 +1,11 @@
+1.两个pckl是之前生成的两个word和相应1到5星count数的矩阵。运行feature_engneering.py的时候可以直接load他们。
+
+2.到目前我试过的所有模型中，反而是第一次不考虑not的问题，使用200生成的矩阵（words_stars.pckl）做的linear model效果最好，rmse=0.95。
+
+3.我们需要做两方面的尝试：
+第一，用现有的feature matrix试各种模型，目前我试过linear，svm和bayes，效果均在1.0左右（用目前的matrix），应该再试试random forest，decision tree，NN等
+第二，我们目前的生成feature matrix的地方还有很多尝试可以做：
+1）尝试保留不同的变量数：50,100,200，1000,2000等
+2）在对condition variance进行第二次scale的时候（第一次scale是没有问题的）可以尝试log等其他的scale方法。
+3）最后生成feature_matrix的时候，可以尝试用某种办法加权
+
