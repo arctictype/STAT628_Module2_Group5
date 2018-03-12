@@ -1,55 +1,47 @@
 import pandas as pd
 import numpy as np
-# import matplotlib.pyplot as plt
-# first 200 lines of the train dataset
-train_200 = pd.read_csv("clean200.csv")
 
-X = train_200['text']
-Y = train_200['stars']
+yelp_30000 = pd.read_csv("train30000.csv")
+new_X1 = pd.read_csv("new_train30000.csv")
+new_X1 = new_X1.drop(new_X1.columns[0],1)
+Y = yelp_30000.loc[:,"stars"]
+samplesize = [10,50,100,500,1000,2000,3000,4000,5000]
 
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfVectorizer
-bow_transformer1 = CountVectorizer().fit(X)
-#bow_transformer2 = TfidfVectorizer(ngram_range=(1,2)).fit(X)
-#print(len(bow_transformer.vocabulary_))
-new_X = bow_transformer1.transform(X)
-#time = pd.to_numeric(train_200['date'].str[:4], errors='coerce')
-print('Shape of Sparse Matrix: ', new_X.shape)
-print('Amount of Non-Zero occurrences: ', new_X.nnz)
+for i in samplesize:
+    new_X = new_X1.drop(new_X1.columns[i:8000],1)
+    print("shape:"+str(new_X.shape))
+    ############  svm ####################
+    from sklearn import svm
+    clf = svm.SVC(kernel='linear',class_weight='balanced',C=1)
 
-from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(new_X, Y, test_size=0.3, random_state=101)
-
-########################### Here's Bayes ################################
-
-from sklearn.naive_bayes import MultinomialNB
-nb = MultinomialNB()
-nb.fit(X_train, y_train)
-
-preds = nb.predict(X_test)
-
-from sklearn.metrics import confusion_matrix, classification_report, mean_squared_error
-print(confusion_matrix(y_test, preds))
-print('\n')
-print(classification_report(y_test, preds))
-print(mean_squared_error(y_test,preds))
-
-# 10-fold cross-validation
-from sklearn.model_selection import cross_val_predict
-preds = cross_val_predict(nb, new_X, Y, cv=10)
-print(mean_squared_error(preds,Y))
-########################### Here's SVM ########################
-print("Here's SVM")
-from sklearn import svm
-clf = svm.SVC(kernel='linear',class_weight='balanced', C=1).fit(X_train, y_train)
-preds = clf.predict(X_test)
-from sklearn.metrics import confusion_matrix, classification_report, mean_squared_error
-print(confusion_matrix(y_test, preds))
-print('\n')
-print(classification_report(y_test, preds))
-print(mean_squared_error(y_test,preds))
-
-# 10-fold cross-validation
-from sklearn.model_selection import cross_val_predict
-preds = cross_val_predict(clf, new_X, Y, cv=10)
-print(mean_squared_error(preds,Y))
+    from sklearn.model_selection import cross_val_predict
+    preds = cross_val_predict(clf, new_X, Y, cv=10)
+    from sklearn.metrics import mean_squared_error
+    print(np.sqrt(mean_squared_error(preds,Y)))
+    ########### random forest ################
+    from sklearn.ensemble import RandomForestRegressor
+    from sklearn.model_selection import GridSearchCV
+    rf = RandomForestRegressor(n_estimators=180, criterion="mse", max_depth=66,
+                               min_samples_split=35, min_samples_leaf=1, min_weight_fraction_leaf=0.0,
+                               max_features="auto", max_leaf_nodes=None, min_impurity_decrease=0.0,
+                               min_impurity_split=None, bootstrap=True, oob_score=True, n_jobs=1,
+                               random_state=101, verbose=0, warm_start=False)
+    from sklearn.model_selection import cross_val_predict
+    preds = cross_val_predict(rf, new_X, Y, cv=10)
+    from sklearn.metrics import mean_squared_error
+    print(np.sqrt(mean_squared_error(preds,Y)))
+    ########### linear ############
+    from sklearn import linear_model
+    from sklearn.linear_model import LinearRegression
+    regr = linear_model.LinearRegression()
+    from sklearn.model_selection import cross_val_predict
+    preds = cross_val_predict(regr, new_X, Y, cv=10)
+    from sklearn.metrics import mean_squared_error
+    print(np.sqrt(mean_squared_error(preds,Y)))
+    ########### Logistic ###############
+    from sklearn.linear_model.logistic import LogisticRegression
+    logi = LogisticRegression(multi_class= "multinomial", solver="sag")
+    from sklearn.model_selection import cross_val_predict
+    preds = cross_val_predict(logi, new_X, Y, cv=10)
+    from sklearn.metrics import mean_squared_error
+    print(np.sqrt(mean_squared_error(preds,Y)))
